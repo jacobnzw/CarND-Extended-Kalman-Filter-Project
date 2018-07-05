@@ -12,22 +12,23 @@ Tools::~Tools() {}
 
 VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
                               const vector<VectorXd> &ground_truth) {
-  /**
-  TODO:
-    * Calculate the RMSE here.
-  */
-  VectorXd a = estimations[0];
-  for (int i = 0; i < estimations.size(); i++) {
-      a[i] = std::pow(estimations[i] - ground_truth[i], 2);
-  }
-  return a;
+    /**
+     * Calculates RMSE of the estimated trajectory.
+     */
+    auto num_steps = estimations[0].size();
+    VectorXd sum, diff;
+    sum.setZero(num_steps);
+    for (unsigned int i = 0; i < estimations.size(); i++) {
+        diff = estimations[i] - ground_truth[i];
+        sum += diff.cwiseProduct(diff);
+    }
+    return (sum / num_steps).cwiseSqrt();
 }
 
 MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
-  /**
-  TODO:
-    * Calculate a Jacobian here.
-  */
-  MatrixXd a;
-  return a;
+    /**
+     * TODO: Calculates Jacobian evaluated at point given by x_state
+     */
+    MatrixXd a;
+    return a;
 }
