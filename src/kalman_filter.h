@@ -27,8 +27,6 @@ public:
     // pre-allocated identity matrix
     Eigen::MatrixXd I_;
 
-    Tools tools_;
-
     /**
      * Constructor
      */

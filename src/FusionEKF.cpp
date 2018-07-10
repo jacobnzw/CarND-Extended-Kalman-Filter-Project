@@ -31,6 +31,9 @@ FusionEKF::FusionEKF() {
             0, 0.0009, 0,
             0, 0, 0.09;
 
+    H_laser_ << 1, 0, 0, 0,
+                0, 1, 0, 0;
+
     /**
     TODO:
       * Finish initializing the FusionEKF.
@@ -65,12 +68,20 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
             /**
             Convert radar from polar to cartesian coordinates and initialize state.
             */
+            double rho = measurement_pack.raw_measurements_[0];
+            double theta = measurement_pack.raw_measurements_[1];
+            ekf_.x_[0] = rho * cos(theta);
+            ekf_.x_[1] = rho * sin(theta);
+            // TODO: still more to do here, this is a complete clusterfuck!
         }
         else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
             /**
             Initialize state.
             */
+            ekf_.x_ = measurement_pack.raw_measurements_;
         }
+
+        previous_timestamp_ = measurement_pack.timestamp_;
 
         // done initializing, no need to predict or update
         is_initialized_ = true;
@@ -88,7 +99,18 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
        * Update the process noise covariance matrix.
        * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
      */
+    double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
+    double noise_ax = 9;
+    double noise_ay = 9;
 
+    ekf_.F_ << 1, 0, dt, 0,
+               0, 1, 0, dt,
+               0, 0, 1, 0,
+               0, 0, 0, 1;
+    ekf_.Q_ << noise_ax*pow(dt, 4)/4, 0, noise_ax*pow(dt, 3)/2, 0,
+               0, noise_ay*pow(dt, 4)/4, 0, noise_ay*pow(dt, 3)/2,
+               noise_ax*pow(dt, 3)/2, 0, noise_ax*pow(dt, 2), 0,
+               0, noise_ay*pow(dt, 3)/2, 0, noise_ay*pow(dt, 2);
     ekf_.Predict();
 
     /*****************************************************************************

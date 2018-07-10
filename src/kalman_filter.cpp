@@ -47,7 +47,6 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     /**
      * Extended Kalman filter update with linearized measurement model.
      */
-    H_ = tools_.CalculateJacobian(z);
     MatrixXd Pz = H_*P_*H_.transpose() + R_;
     MatrixXd Pzx = H_*P_;
     MatrixXd K = Pz.ldlt().solve(Pzx).transpose();
