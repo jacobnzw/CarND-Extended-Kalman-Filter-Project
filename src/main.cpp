@@ -38,6 +38,7 @@ int main()
   vector<VectorXd> estimations;
   vector<VectorXd> ground_truth;
 
+  // set callback handlers
   h.onMessage([&fusionEKF,&tools,&estimations,&ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -66,6 +67,7 @@ int main()
     	  string sensor_type;
     	  iss >> sensor_type;
 
+    	  // read data from simulator and wrap it in a measurement package
     	  if (sensor_type.compare("L") == 0) {
       	  		meas_package.sensor_type_ = MeasurementPackage::LASER;
           		meas_package.raw_measurements_ = VectorXd(2);
@@ -90,6 +92,7 @@ int main()
           		iss >> timestamp;
           		meas_package.timestamp_ = timestamp;
           }
+          // read the ground truth state (position, velocity)
           float x_gt;
     	  float y_gt;
     	  float vx_gt;
@@ -108,24 +111,23 @@ int main()
           //Call ProcessMeasurment(meas_package) for Kalman filter
     	  fusionEKF.ProcessMeasurement(meas_package);    	  
 
-    	  //Push the current estimated x,y positon from the Kalman filter's state vector
-
+    	  // read filtered state off of the Kalman filter object in the FusionEKF class instance
     	  VectorXd estimate(4);
-
     	  double p_x = fusionEKF.ekf_.x_(0);
     	  double p_y = fusionEKF.ekf_.x_(1);
     	  double v1  = fusionEKF.ekf_.x_(2);
     	  double v2 = fusionEKF.ekf_.x_(3);
-
     	  estimate(0) = p_x;
     	  estimate(1) = p_y;
     	  estimate(2) = v1;
     	  estimate(3) = v2;
-    	  
+    	  //Push the current estimated x,y positon from the Kalman filter's state vector
     	  estimations.push_back(estimate);
 
+    	  // calculate current RMSE for all time steps until present
     	  VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
 
+    	  // create a message for the simulator
           json msgJson;
           msgJson["estimate_x"] = p_x;
           msgJson["estimate_y"] = p_y;
