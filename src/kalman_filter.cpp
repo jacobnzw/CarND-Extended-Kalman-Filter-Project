@@ -47,7 +47,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     /**
      * Extended Kalman filter update with linearized measurement model.
      */
-    VectorXd mz;
+    VectorXd mz = VectorXd(3U);
     mz << sqrt(pow(x_[0], 2) + pow(x_[1], 2)),
             atan2(x_[1], x_[0]),
             (x_[0]*x_[2] + x_[1]*x_[3])/sqrt(pow(x_[0], 2) + pow(x_[1], 2));

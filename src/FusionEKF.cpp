@@ -24,12 +24,12 @@ FusionEKF::FusionEKF() {
 
     //measurement covariance matrix - laser
     R_laser_ << 0.0225, 0,
-            0, 0.0225;
+                0, 0.0225;
 
     //measurement covariance matrix - radar
     R_radar_ << 0.09, 0, 0,
-            0, 0.0009, 0,
-            0, 0, 0.09;
+                0, 0.0009, 0,
+                0, 0, 0.09;
 
     H_laser_ << 1, 0, 0, 0,
                 0, 1, 0, 0;
@@ -67,18 +67,22 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
         if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
             /**
             Convert radar from polar to cartesian coordinates and initialize state.
+
+            This seemingly ad-hocy conversion happens because we are initializing state with measurements.
+            Hence the need for inverse transform from polar (measurement space) to cartesian (state space).
             */
             double rho = measurement_pack.raw_measurements_[0];
             double theta = measurement_pack.raw_measurements_[1];
             ekf_.x_[0] = rho * cos(theta);
             ekf_.x_[1] = rho * sin(theta);
-            // TODO: still more to do here, this is a complete clusterfuck!
         }
         else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
             /**
             Initialize state.
             */
-            ekf_.x_ = measurement_pack.raw_measurements_;
+            ekf_.x_.segment(0, 2) = measurement_pack.raw_measurements_.segment(0, 2);
+//            ekf_.x_[0] = measurement_pack.raw_measurements_[0];
+//            ekf_.x_[1] = measurement_pack.raw_measurements_[1];
         }
 
         previous_timestamp_ = measurement_pack.timestamp_;
@@ -125,12 +129,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
         // Radar updates
+        Tools tools;
+        ekf_.H_ = tools.CalculateJacobian(measurement_pack.raw_measurements_);
         ekf_.UpdateEKF(measurement_pack.raw_measurements_);
-        // TODO: update state and covariance matrices
     } else {
         // Laser updates
+        ekf_.H_ = H_laser_;
         ekf_.Update(measurement_pack.raw_measurements_);
-        // TODO: update state and covariance matrices
     }
 
     // print the output
