@@ -1,6 +1,7 @@
 #include "kalman_filter.h"
 #include "tools.h"
 #include <iostream>
+#include <cfloat>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -50,10 +51,21 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
      * Extended Kalman filter update with linearized measurement model.
      */
     VectorXd mz = VectorXd(3U);
-    mz << sqrt(pow(x_[0], 2) + pow(x_[1], 2)),
-            atan2(x_[1], x_[0]),
-            (x_[0]*x_[2] + x_[1]*x_[3])/sqrt(pow(x_[0], 2) + pow(x_[1], 2));
+    // compute predicted measurement and safeguard against division by zero
+    double norm = sqrt(pow(x_[0], 2) + pow(x_[1], 2)) + DBL_EPSILON;
+    mz << norm,
+          atan2(x_[1], x_[0]),
+          (x_[0]*x_[2] + x_[1]*x_[3])/norm;
+
     VectorXd e = z - mz;
+    cout << "z[1]: " << z[1] << "\te[1]: " << e[1];
+    // keep difference in angles between -pi and pi
+    double temp = e[1] / (2*M_PI);
+    if (abs(temp) > 1) {
+        unsigned int pi_count = floor(temp);
+        e[1] -= 2*pi_count*M_PI;
+    }
+    cout << "\tscaled e[1]: " << e[1] << endl;
     MatrixXd Pz = H_*P_*H_.transpose() + R_;
     MatrixXd Pzx = H_*P_;
     MatrixXd K = Pz.ldlt().solve(Pzx).transpose();

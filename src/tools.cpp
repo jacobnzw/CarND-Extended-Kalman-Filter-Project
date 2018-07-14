@@ -15,9 +15,10 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
     /**
      * Calculates RMSE of the estimated trajectory.
      */
-    auto num_steps = estimations[0].size();
+    unsigned int dim = estimations[0].size();
+    unsigned int num_steps = estimations.size();
     VectorXd sum, diff;
-    sum.setZero(num_steps);
+    sum.setZero(dim);
     for (unsigned int i = 0; i < estimations.size(); i++) {
         diff = estimations[i] - ground_truth[i];
         sum += diff.cwiseProduct(diff);
@@ -35,8 +36,6 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
     double v_x = x_state[2];
     double v_y = x_state[3];
     double norm2 = pow(p_x, 2) + pow(p_y, 2);
-    cout << "norm(p): " << norm2;
-//    cout << " inner(p,v): " << v_x*p_y - v_y*p_x <<  endl;
     jacobian << p_x/(sqrt(norm2)), p_y/(sqrt(norm2)), 0, 0,
                 -p_y/norm2, p_x/norm2, 0, 0,
                 p_y * (v_x*p_y - v_y*p_x)/pow(norm2, 1.5), p_x * (v_y*p_x - v_x*p_y)/pow(norm2, 1.5),
