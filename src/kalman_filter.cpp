@@ -58,14 +58,12 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
           (x_[0]*x_[2] + x_[1]*x_[3])/norm;
 
     VectorXd e = z - mz;
-    cout << "z[1]: " << z[1] << "\te[1]: " << e[1];
     // keep difference in angles between -pi and pi
     double temp = e[1] / (2*M_PI);
     if (abs(temp) > 1) {
         unsigned int pi_count = floor(temp);
         e[1] -= 2*pi_count*M_PI;
     }
-    cout << "\tscaled e[1]: " << e[1] << endl;
     MatrixXd Pz = H_*P_*H_.transpose() + R_;
     MatrixXd Pzx = H_*P_;
     MatrixXd K = Pz.ldlt().solve(Pzx).transpose();
