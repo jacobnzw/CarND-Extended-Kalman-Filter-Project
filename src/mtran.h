@@ -23,7 +23,8 @@ public:
     int dim_out_;
 
     // arguments: input mean and covariance, function handle, function parameters
-    virtual Moments apply(VectorXd (*f)(VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov) = 0;
+    virtual Moments apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+                          const VectorXd &in_mean, const MatrixXd &in_cov, float dt) = 0;
 };
 
 
@@ -35,7 +36,8 @@ class LinearizationTransform : public MomentTransform {
 public:
     LinearizationTransform(int dim_in, int dim_out);
     virtual ~LinearizationTransform();
-    Moments apply(VectorXd (*f) (VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov);
+    Moments apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 };
 
 
@@ -71,9 +73,10 @@ public:
     float alpha_;
     float beta_;
 
-    UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha, float beta);
+    UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F);
     virtual ~UnscentedTransform();
-    Moments apply(VectorXd (*f) (VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov);
+    Moments apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 
 private:
     /**

@@ -6,44 +6,62 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include "kalman_filter.h"
+#include "mtran.h"
 #include "tools.h"
+
+using Eigen::VectorXd;
+using Eigen::MatrixXd;
 
 class FusionEKF {
 public:
-  /**
-  * Constructor.
-  */
-  FusionEKF();
+    VectorXd mx_, mz_;
+    MatrixXd Px_, Pz_, Pxz_;
 
-  /**
-  * Destructor.
-  */
-  virtual ~FusionEKF();
+    MomentTransform mt_dyn_, mt_radar_, mt_laser_;
 
-  /**
-  * Run the whole flow of the Kalman Filter from here.
-  */
-  void ProcessMeasurement(const MeasurementPackage &measurement_pack);
+    /**
+    * Constructor.
+    */
+    FusionEKF();
 
-  /**
-  * Kalman Filter update and prediction math lives in here.
-  */
-  KalmanFilter ekf_;
+    /**
+    * Destructor.
+    */
+    virtual ~FusionEKF();
+
+    virtual VectorXd processFunction(VectorXd &x);
+
+    virtual VectorXd radarFunction(VectorXd &x);
+
+    virtual VectorXd laserFunction(VectorXd &x);
+
+    virtual MatrixXd processFunctionGrad(VectorXd &x);
+
+    virtual MatrixXd radarFunctionGrad(VectorXd &x);
+
+    virtual MatrixXd laserFunctionGrad(VectorXd &x);
+
+    virtual void measurementUpdate(const VectorXd &z);
+
+    /**
+    * Run the whole flow of the Kalman Filter from here.
+    */
+    void ProcessMeasurement(const MeasurementPackage &measurement_pack);
+
 
 private:
-  // check whether the tracking toolbox was initialized or not (first measurement)
-  bool is_initialized_;
+    // check whether the tracking toolbox was initialized or not (first measurement)
+    bool is_initialized_;
 
-  // previous timestamp
-  long long previous_timestamp_;
+    // previous timestamp
+    long long previous_timestamp_;
 
-  // tool object used to compute Jacobian and RMSE
-  Tools tools;
-  Eigen::MatrixXd R_laser_;
-  Eigen::MatrixXd R_radar_;
-  Eigen::MatrixXd H_laser_;
-  Eigen::MatrixXd Hj_;
+    // tool object used to compute RMSE
+    Tools tools;
+
+    MatrixXd R_laser_;
+    MatrixXd R_radar_;
+    MatrixXd H_laser_;
 };
 
 #endif /* FusionEKF_H_ */

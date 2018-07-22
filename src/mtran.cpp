@@ -9,14 +9,19 @@ LinearizationTransform::LinearizationTransform(int dim_in, int dim_out) {
     dim_out_ = dim_out;
 }
 
-LinearizationTransform::~LinearizationTransform() {
+LinearizationTransform::~LinearizationTransform() {}
 
-}
+Moments LinearizationTransform::apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+                                      const VectorXd &in_mean, const MatrixXd &in_cov, float dt) {
+    VectorXd fm = f(in_mean, dt);
+    MatrixXd Fm = f_grad(in_mean, dt);
 
-Moments LinearizationTransform::apply(VectorXd (*f)(VectorXd), const VectorXd &in_mean,
-                                      const MatrixXd &in_cov) {
-    VectorXd fm = f(in_mean);
-    // TODO: evaluate Jacobian, compute
+    Moments out;
+    out.mean = fm;
+    out.cov = Fm*in_cov*Fm.transpose();
+    out.ccov = in_cov*Fm.transpose();
+
+    return out;
 }
 
 
@@ -56,15 +61,15 @@ VectorXd UnscentedTransform::set_weights() {
     weights_cov_[0] = weights_mean_[0] + (1 - pow(alpha_, 2) + beta_);
 }
 
-Moments UnscentedTransform::apply(VectorXd (*f)(VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov) {
+Moments UnscentedTransform::apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+                                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt) {
     // make sigma-points
     MatrixXd L = in_cov.llt().matrixL();
     MatrixXd x = in_mean.rowwise().replicate(num_points_) + L*points_;
 
     // function evaluations
-//    MatrixXd fcn_val = MatrixXd::Zero(dim_out_, num_points_); // TODO: move into constructor
     for (int i = 0; i < num_points_; ++i) {
-        fcn_val_.col(i) = f(x.col(i));
+        fcn_val_.col(i) = f(x.col(i), dt);
     }
 
     // output moments

@@ -20,7 +20,6 @@ FusionEKF::FusionEKF() {
     R_laser_ = MatrixXd(2, 2);
     R_radar_ = MatrixXd(3, 3);
     H_laser_ = MatrixXd(2, 4);
-    Hj_ = MatrixXd(3, 4);
 
     //measurement covariance matrix - laser
     R_laser_ << 0.0225, 0,
@@ -36,19 +35,19 @@ FusionEKF::FusionEKF() {
 
     MatrixXd eye_4 = MatrixXd::Identity(4, 4);
     VectorXd ones_4 = VectorXd::Ones(4);
-    ekf_.Init(ones_4, eye_4, eye_4, H_laser_, R_laser_, eye_4);
 
-    /**
-    TODO:
-      * Finish initializing the FusionEKF.
-      * Set the process and measurement noises
-    */
 }
 
 /**
 * Destructor.
 */
 FusionEKF::~FusionEKF() {}
+
+void measurementUpdate(const VectorXd &z) {
+    MatrixXd K = Pz_.llt().solve(Pxz_.transpose());
+    mx_ = mx_ + K.transpose() * (z - mz_);
+    Px_ = Px_ - K.transpose() * Pz_ * K;
+}
 
 void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
@@ -57,12 +56,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      *  Initialization
      ****************************************************************************/
     if (!is_initialized_) {
-        /**
-        TODO:
-          * Initialize the state ekf_.x_ with the first measurement.
-          * Create the covariance matrix.
-          * Remember: you'll need to convert radar from polar to cartesian coordinates.
-        */
         // first measurement
         if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
             /**
@@ -94,14 +87,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     /*****************************************************************************
      *  Prediction
      ****************************************************************************/
-
-    /**
-     TODO:
-       * Update the state transition matrix F according to the new elapsed time.
-        - Time is measured in seconds.
-       * Update the process noise covariance matrix.
-       * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
-     */
 
     double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
     previous_timestamp_ = measurement_pack.timestamp_;
