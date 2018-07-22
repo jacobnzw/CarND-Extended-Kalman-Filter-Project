@@ -19,7 +19,8 @@ struct Moments {
 
 class MomentTransform {
 public:
-    int dim_;
+    int dim_in_;
+    int dim_out_;
 
     // arguments: input mean and covariance, function handle, function parameters
     virtual Moments apply(VectorXd (*f)(VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov) = 0;
@@ -32,8 +33,9 @@ class LinearizationTransform : public MomentTransform {
      */
 
 public:
-    LinearizationTransform();
+    LinearizationTransform(int dim_in, int dim_out);
     virtual ~LinearizationTransform();
+    Moments apply(VectorXd (*f) (VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov);
 };
 
 
@@ -45,14 +47,20 @@ public:
     MatrixXd points_;
 
     /**
+     * Function values.
+     */
+     MatrixXd fcn_val_;
+
+    /**
      * Transform weights.
      */
     VectorXd weights_mean_;
     VectorXd weights_cov_;
 
+    int num_points_;
+
 private:
     virtual MatrixXd set_sigma_points() = 0;
-
     virtual VectorXd set_weights() = 0;
 };
 
@@ -63,19 +71,20 @@ public:
     float alpha_;
     float beta_;
 
-    UnscentedTransform(int dim, float kappa, float alpha, float beta);
+    UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha, float beta);
     virtual ~UnscentedTransform();
+    Moments apply(VectorXd (*f) (VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov);
 
 private:
     /**
      * Set UT sigma-points, which can later be accessed via public member
      */
-    virtual MatrixXd set_sigma_points();
+    MatrixXd set_sigma_points();
 
     /**
      * Set UT weights, which can later be accessed via public member
      */
-    virtual VectorXd set_weights();
+    VectorXd set_weights();
 };
 
 

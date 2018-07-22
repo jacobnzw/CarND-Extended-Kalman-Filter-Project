@@ -4,13 +4,32 @@
 
 #include "mtran.h"
 
+LinearizationTransform::LinearizationTransform(int dim_in, int dim_out) {
+    dim_in_ = dim_in;
+    dim_out_ = dim_out;
+}
 
-UnscentedTransform::UnscentedTransform(int dim, float kappa, float alpha=1.0F, float beta=2.0F) {
-    dim_ = dim;
+LinearizationTransform::~LinearizationTransform() {
+
+}
+
+Moments LinearizationTransform::apply(VectorXd (*f)(VectorXd), const VectorXd &in_mean,
+                                      const MatrixXd &in_cov) {
+    VectorXd fm = f(in_mean);
+    // TODO: evaluate Jacobian, compute
+}
+
+
+UnscentedTransform::UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F) {
+    dim_in_ = dim_in;
+    dim_out_ = dim_out;
+    num_points_ = 2*dim_in + 1;
 
     kappa_ = kappa;
     alpha_ = alpha;
     beta_ = beta;
+
+    fcn_val_ = MatrixXd::Zero(dim_out_, num_points_);
 
     set_sigma_points();
     set_weights();
@@ -19,29 +38,46 @@ UnscentedTransform::UnscentedTransform(int dim, float kappa, float alpha=1.0F, f
 UnscentedTransform::~UnscentedTransform() {}
 
 MatrixXd UnscentedTransform::set_sigma_points() {
-    points_ = MatrixXd::Zero(dim_, 2*dim_+1);
-    double lambda = pow(alpha_, 2)*(dim_ + kappa_) - dim_;
-    double c = sqrt(dim_ + lambda);
-    for (int i = 1; i <= dim_; ++i) {
+    points_ = MatrixXd::Zero(dim_in_, num_points_);
+    double lambda = pow(alpha_, 2)*(dim_in_ + kappa_) - dim_in_;
+    double c = sqrt(dim_in_ + lambda);
+    for (int i = 1; i <= dim_in_; ++i) {
         points_[i, i] = c;
         points_[i, 2*i] = -c;
     }
 }
 
 VectorXd UnscentedTransform::set_weights() {
-    double lambda = pow(alpha_, 2)*(dim_ + kappa_) - dim_;
-    weights_mean_ = VectorXd::Ones(2*dim_ + 1) / (2*(dim_ + lambda));
-    weights_mean_[0] = lambda / (dim_ + lambda);
+    double lambda = pow(alpha_, 2)*(dim_in_ + kappa_) - dim_in_;
+    weights_mean_ = VectorXd::Ones(num_points_) / (2*(dim_in_ + lambda));
+    weights_mean_[0] = lambda / (dim_in_ + lambda);
 
-    weights_cov_ = VectorXd::Ones(2*dim_ + 1) / (2*(dim_ + lambda));
+    weights_cov_ = VectorXd::Ones(num_points_) / (2*(dim_in_ + lambda));
     weights_cov_[0] = weights_mean_[0] + (1 - pow(alpha_, 2) + beta_);
 }
 
 Moments UnscentedTransform::apply(VectorXd (*f)(VectorXd), const VectorXd &in_mean, const MatrixXd &in_cov) {
-    Eigen::LLT<MatrixXd> chol(in_cov);
-    MatrixXd L = chol.matrixL();
-    MatrixXd x = in_mean + L*points_;
+    // make sigma-points
+    MatrixXd L = in_cov.llt().matrixL();
+    MatrixXd x = in_mean.rowwise().replicate(num_points_) + L*points_;
 
-    // TODO: calculate mean, cov and ccov
-    // TODO: maybe move into sigma-point transform
+    // function evaluations
+//    MatrixXd fcn_val = MatrixXd::Zero(dim_out_, num_points_); // TODO: move into constructor
+    for (int i = 0; i < num_points_; ++i) {
+        fcn_val_.col(i) = f(x.col(i));
+    }
+
+    // output moments
+    Moments out;
+    // transformed mean
+    out.mean = fcn_val_*weights_mean_;
+    // transformed covariance and input-output covariance
+    VectorXd df = fcn_val_ - out.mean.rowwise().replicate(num_points_);
+    VectorXd dx = points_ - in_mean.rowwise().replicate(num_points_);
+    for (int i = 0; i < num_points_; ++i) {
+        out.cov += weights_cov_(i) * (df.col(i) * df.col(i).transpose());
+        out.ccov += weights_mean_(i) * (dx.col(i) * df.col(i).transpose());
+    }
+
+    return out;
 }
