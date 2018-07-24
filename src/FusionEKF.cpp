@@ -43,18 +43,39 @@ FusionEKF::FusionEKF() {
 */
 FusionEKF::~FusionEKF() {}
 
-void measurementUpdate(const VectorXd &z) {
+
+// TODO: provide implementation
+VectorXd FusionEKF::processFunction(VectorXd &x) {
+
+}
+
+VectorXd FusionEKF::radarFunction(VectorXd &x) {
+
+}
+
+VectorXd FusionEKF::laserFunction(VectorXd &x) {
+
+}
+
+MatrixXd FusionEKF::processFunctionGrad(VectorXd &x) {
+
+}
+
+MatrixXd FusionEKF::radarFunctionGrad(VectorXd &x) {
+
+}
+
+MatrixXd FusionEKF::laserFunctionGrad(VectorXd &x) {
+
+}
+
+void FusionEKF::measurementUpdate(const VectorXd &z) {
     MatrixXd K = Pz_.llt().solve(Pxz_.transpose());
     mx_ = mx_ + K.transpose() * (z - mz_);
     Px_ = Px_ - K.transpose() * Pz_ * K;
 }
 
 void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
-
-
-    /*****************************************************************************
-     *  Initialization
-     ****************************************************************************/
     if (!is_initialized_) {
         // first measurement
         if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
@@ -106,13 +127,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     /*****************************************************************************
      *  Update
      ****************************************************************************/
-
-    /**
-     TODO:
-       * Use the sensor type to perform the update step.
-       * Update the state and covariance matrices.
-     */
-
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
         // Radar updates
         Tools tools;
@@ -125,8 +139,4 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
         ekf_.R_ = R_laser_;
         ekf_.Update(measurement_pack.raw_measurements_);
     }
-
-    // print the output
-//    cout << "x_ = " << ekf_.x_ << endl;
-//    cout << "P_ = " << ekf_.P_ << endl;
 }
