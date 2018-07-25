@@ -42,6 +42,8 @@ class FusionEKF
 
     virtual MatrixXd laserFunctionGrad(VectorXd &x, float dt);
 
+    virtual MatrixXd processCovariance(float dt);
+
     virtual void measurementUpdate(const VectorXd &z);
 
     /**

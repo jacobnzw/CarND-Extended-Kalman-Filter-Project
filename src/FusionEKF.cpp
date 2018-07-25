@@ -97,6 +97,17 @@ MatrixXd FusionEKF::laserFunctionGrad(VectorXd &x, float dt)
   return MatrixXd::Ones(2, 4);
 }
 
+MatrixXd FusionEKF::processCovariance(float dt) {
+    double noise_ax = 9;
+    double noise_ay = 9;
+    MatrixXd Q;
+    Q <<  noise_ax*pow(dt, 4)/4, 0, noise_ax*pow(dt, 3)/2, 0,
+          0, noise_ay*pow(dt, 4)/4, 0, noise_ay*pow(dt, 3)/2,
+          noise_ax*pow(dt, 3)/2, 0, noise_ax*pow(dt, 2), 0,
+          0, noise_ay*pow(dt, 3)/2, 0, noise_ay*pow(dt, 2);
+    return Q;
+}
+
 void FusionEKF::measurementUpdate(const VectorXd &z)
 {
   MatrixXd K = Pz_.llt().solve(Pxz_.transpose());
@@ -119,16 +130,16 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
             */
             double rho = measurement_pack.raw_measurements_[0];
             double theta = measurement_pack.raw_measurements_[1];
-            ekf_.x_[0] = rho * cos(theta);
-            ekf_.x_[1] = rho * sin(theta);
+            mx_[0] = rho * cos(theta);
+            mx_[1] = rho * sin(theta);
         }
         else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
             /**
             Initialize state.
             */
 //            ekf_.x_.segment(0, 2) = measurement_pack.raw_measurements_.segment(0, 2);
-            ekf_.x_[0] = measurement_pack.raw_measurements_[0];
-            ekf_.x_[1] = measurement_pack.raw_measurements_[1];
+            mx_[0] = measurement_pack.raw_measurements_[0];
+            mx_[1] = measurement_pack.raw_measurements_[1];
         }
 
         previous_timestamp_ = measurement_pack.timestamp_;
@@ -140,53 +151,33 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     /*****************************************************************************
      *  Prediction
      ****************************************************************************/
-
     double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
     previous_timestamp_ = measurement_pack.timestamp_;
 
-    double noise_ax = 9;
-    double noise_ay = 9;
-
     Moments pred_moments;
-    pred_moments = mt_dyn_.apply(processFunction, processFunctionGrad, mx_, Px_, dt);
+    pred_moments = mt_dyn_.apply(&processFunction, &processFunctionGrad, mx_, Px_, dt);
+    mx_ = pred_moments.mean;
+    Px_ = pred_moments.cov + processCovariance(dt);
 
-
-    // ekf_.F_ <<  1, 0, dt, 0,
-    //             0, 1, 0, dt,
-    //             0, 0, 1, 0,
-    //             0, 0, 0, 1;
-    // double noise_ax = 9;
-    // double noise_ay = 9;
-    // ekf_.Q_ << noise_ax*pow(dt, 4)/4, 0, noise_ax*pow(dt, 3)/2, 0,
-    //            0, noise_ay*pow(dt, 4)/4, 0, noise_ay*pow(dt, 3)/2,
-    //            noise_ax*pow(dt, 3)/2, 0, noise_ax*pow(dt, 2), 0,
-    //            0, noise_ay*pow(dt, 3)/2, 0, noise_ay*pow(dt, 2);
-    // ekf_.Predict();
 
     /*****************************************************************************
      *  Update
      ****************************************************************************/
-
-    /**
-     TODO:
-       * Use the sensor type to perform the update step.
-       * Update the state and covariance matrices.
-     */
-
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
         // Radar updates
-        Tools tools;
-        ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
-        ekf_.R_ = R_radar_;
-        ekf_.UpdateEKF(measurement_pack.raw_measurements_);
+        Moments meas_moments;
+        meas_moments = mt_radar_.apply(radarFunction, radarFunctionGrad, mx_, Px_, dt);
+        mz_ = meas_moments.mean;
+        Pz_ = meas_moments.cov + R_radar_;
+        Pxz_ = meas_moments.ccov;
+        measurementUpdate(measurement_pack.raw_measurements_);
     } else {
         // Laser updates
-        ekf_.H_ = H_laser_;
-        ekf_.R_ = R_laser_;
-        ekf_.Update(measurement_pack.raw_measurements_);
+        Moments meas_moments;
+        meas_moments = mt_laser_.apply(laserFunction, laserFunctionGrad, mx_, Px_, dt);
+        mz_ = meas_moments.mean;
+        Pz_ = meas_moments.cov + R_laser_;
+        Pxz_ = meas_moments.ccov;
+        measurementUpdate(measurement_pack.raw_measurements_);
     }
-
-    // print the output
-//    cout << "x_ = " << ekf_.x_ << endl;
-//    cout << "P_ = " << ekf_.P_ << endl;
 }
