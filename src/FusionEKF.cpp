@@ -2,6 +2,7 @@
 #include "tools.h"
 #include "Eigen/Dense"
 #include <iostream>
+#include <cfloat>
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -43,7 +44,54 @@ FusionEKF::FusionEKF() {
 */
 FusionEKF::~FusionEKF() {}
 
-void measurementUpdate(const VectorXd &z) {
+VectorXd FusionEKF::processFunction(VectorXd &x, float dt) {
+  MatrixXd F;
+  F <<  1, 0, dt, 0,
+        0, 1, 0, dt,
+        0, 0, 1, 0,
+        0, 0, 0, 1;
+  return F * x;
+}
+
+VectorXd FusionEKF::radarFunction(VectorXd &x, float dt) {
+  VectorXd out = VectorXd(3U);
+  // compute predicted measurement and safeguard against division by zero
+  double norm = sqrt(pow(x[0], 2) + pow(x[1], 2)) + DBL_EPSILON;
+  out << norm, atan2(x[1], x[0]), (x[0]*x[2] + x[1]*x[3])/norm;
+}
+
+VectorXd FusionEKF::laserFunction(VectorXd &x, float dt) {
+  MatrixXd H = MatrixXd::Ones(2, 4);
+  return H * x;
+}
+
+MatrixXd FusionEKF::processFunctionGrad(VectorXd &x, float dt) {
+  MatrixXd F = MatrixXd::Ones(4, 4);
+  F[0, 2] = dt;
+  F[1, 3] = dt;
+  F.transposeInPlace();
+  return F;
+}
+
+MatrixXd FusionEKF::radarFunctionGrad(VectorXd &x, float dt) {
+  MatrixXd jacobian = MatrixXd(3, 4);
+  double p_x = x[0];
+  double p_y = x[1];
+  double v_x = x[2];
+  double v_y = x[3];
+  double norm2 = pow(p_x, 2) + pow(p_y, 2) + DBL_EPSILON;
+  jacobian << p_x/(sqrt(norm2)), p_y/(sqrt(norm2)), 0, 0,
+              -p_y/norm2, p_x/norm2, 0, 0,
+              p_y * (v_x*p_y - v_y*p_x)/pow(norm2, 1.5), p_x * (v_y*p_x - v_x*p_y)/pow(norm2, 1.5),
+              p_x/sqrt(norm2), p_y/sqrt(norm2);
+  return jacobian;
+}
+
+MatrixXd FusionEKF::laserFunctionGrad(VectorXd &x, float dt) {
+  return MatrixXd::Ones(2, 4);
+}
+
+void FusionEKF::measurementUpdate(const VectorXd &z) {
     MatrixXd K = Pz_.llt().solve(Pxz_.transpose());
     mx_ = mx_ + K.transpose() * (z - mz_);
     Px_ = Px_ - K.transpose() * Pz_ * K;
@@ -91,10 +139,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
     previous_timestamp_ = measurement_pack.timestamp_;
 
-    ekf_.F_ << 1, 0, dt, 0,
-               0, 1, 0, dt,
-               0, 0, 1, 0,
-               0, 0, 0, 1;
+    ekf_.F_ <<  1, 0, dt, 0,
+                0, 1, 0, dt,
+                0, 0, 1, 0,
+                0, 0, 0, 1;
     double noise_ax = 9;
     double noise_ay = 9;
     ekf_.Q_ << noise_ax*pow(dt, 4)/4, 0, noise_ax*pow(dt, 3)/2, 0,
