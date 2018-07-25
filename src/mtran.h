@@ -6,8 +6,8 @@
 #define EXTENDEDKF_MTRAN_H
 #include "Eigen/Dense"
 
-using Eigen::VectorXd
-using Eigen::MatrixXd
+using Eigen::VectorXd;
+using Eigen::MatrixXd;
 
 // struct for bundling output of any resulting moments of any moment transform
 struct Moments {
