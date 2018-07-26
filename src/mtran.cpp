@@ -4,9 +4,15 @@
 
 #include "mtran.h"
 
-
+MomentTransform::MomentTransform() {}
 MomentTransform::MomentTransform(int dim_in, int dim_out) {}
-
+MomentTransform::~MomentTransform() {}
+Moments MomentTransform::apply(std::function<VectorXd(const VectorXd &, float)> f,
+                               std::function<MatrixXd(const VectorXd &, float)> f_grad, const VectorXd &in_mean,
+                               const MatrixXd &in_cov, float dt) {
+    Moments out;
+    return out;
+}
 
 /* 
   Linearization moment transform based on first-order Taylor expansion used in EKF.
@@ -15,8 +21,8 @@ LinearizationTransform::LinearizationTransform(int dim_in, int dim_out) : Moment
 
 LinearizationTransform::~LinearizationTransform() {}
 
-Moments LinearizationTransform::apply(std::function<VectorXd(VectorXd, float)> f, 
-                                      std::function<MatrixXd(VectorXd, float)> f_grad,
+Moments LinearizationTransform::apply(std::function<VectorXd(const VectorXd&, float)> f,
+                                      std::function<MatrixXd(const VectorXd&, float)> f_grad,
                                       const VectorXd &in_mean, const MatrixXd &in_cov, float dt) 
 {
     VectorXd fm = f(in_mean, dt);
@@ -31,8 +37,11 @@ Moments LinearizationTransform::apply(std::function<VectorXd(VectorXd, float)> f
 }
 
 SigmaPointMomentTransform::SigmaPointMomentTransform(int dim_in, int dim_out) : MomentTransform(dim_in, dim_out) {}
+SigmaPointMomentTransform::~SigmaPointMomentTransform() {}
+void SigmaPointMomentTransform::set_weights() {}
+void SigmaPointMomentTransform::set_sigma_points() {}
 
-UnscentedTransform::UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F) : 
+UnscentedTransform::UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha, float beta) :
 SigmaPointMomentTransform(dim_in, dim_out)
 {
     num_points_ = 2*dim_in + 1;
@@ -49,17 +58,17 @@ SigmaPointMomentTransform(dim_in, dim_out)
 
 UnscentedTransform::~UnscentedTransform() {}
 
-MatrixXd UnscentedTransform::set_sigma_points() {
+void UnscentedTransform::set_sigma_points() {
     points_ = MatrixXd::Zero(dim_in_, num_points_);
     double lambda = pow(alpha_, 2)*(dim_in_ + kappa_) - dim_in_;
     double c = sqrt(dim_in_ + lambda);
     for (int i = 1; i <= dim_in_; ++i) {
-        points_[i, i] = c;
-        points_[i, 2*i] = -c;
+        points_(i, i) = c;
+        points_(i, 2*i) = -c;
     }
 }
 
-VectorXd UnscentedTransform::set_weights() {
+void UnscentedTransform::set_weights() {
     double lambda = pow(alpha_, 2)*(dim_in_ + kappa_) - dim_in_;
     weights_mean_ = VectorXd::Ones(num_points_) / (2*(dim_in_ + lambda));
     weights_mean_[0] = lambda / (dim_in_ + lambda);
@@ -68,9 +77,9 @@ VectorXd UnscentedTransform::set_weights() {
     weights_cov_[0] = weights_mean_[0] + (1 - pow(alpha_, 2) + beta_);
 }
 
-Moments UnscentedTransform::apply(std::function<VectorXd(VectorXd, float)> f, 
-                                  std::function<MatrixXd(VectorXd, float)> f_grad,
-                                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt) 
+Moments UnscentedTransform::apply(std::function<VectorXd(const VectorXd&, float)> f,
+                                  std::function<MatrixXd(const VectorXd&, float)> f_grad,
+                                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt)
 {
     // make sigma-points
     MatrixXd L = in_cov.llt().matrixL();

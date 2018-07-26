@@ -5,6 +5,7 @@
 #ifndef EXTENDEDKF_MTRAN_H
 #define EXTENDEDKF_MTRAN_H
 #include "Eigen/Dense"
+#include <functional>
 
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
@@ -22,10 +23,13 @@ public:
     int dim_in_;
     int dim_out_;
 
-    MomentTransform(int dim_in, int dim_out);
 
-    virtual Moments apply(std::function<VectorXd(VectorXd, float)> f, 
-                          std::function<MatrixXd(VectorXd, float)> f_grad,
+    MomentTransform();
+    MomentTransform(int dim_in, int dim_out);
+    virtual ~MomentTransform();
+
+    virtual Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
+                          std::function<MatrixXd(const VectorXd&, float)> f_grad,
                           const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 };
 
@@ -38,8 +42,8 @@ class LinearizationTransform : public MomentTransform {
 public:
     LinearizationTransform(int dim_in, int dim_out);
     virtual ~LinearizationTransform();
-    Moments apply(std::function<VectorXd(VectorXd, float)> f, 
-                  std::function<MatrixXd(VectorXd, float)> f_grad,
+    Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
+                  std::function<MatrixXd(const VectorXd&, float)> f_grad,
                   const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 };
 
@@ -65,10 +69,11 @@ public:
     int num_points_;
 
     SigmaPointMomentTransform(int dim_in, int dim_out);
+    virtual ~SigmaPointMomentTransform();
     
 private:
-    virtual MatrixXd set_sigma_points();
-    virtual VectorXd set_weights();
+    virtual void set_sigma_points();
+    virtual void set_weights();
 };
 
 
@@ -80,20 +85,20 @@ public:
 
     UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F);
     virtual ~UnscentedTransform();
-    Moments apply(std::function<VectorXd(VectorXd, float)> f, 
-                  std::function<MatrixXd(VectorXd, float)> f_grad,
+    Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
+                  std::function<MatrixXd(const VectorXd&, float)> f_grad,
                   const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 
 private:
     /**
      * Set UT sigma-points, which can later be accessed via public member
      */
-    MatrixXd set_sigma_points();
+    void set_sigma_points();
 
     /**
      * Set UT weights, which can later be accessed via public member
      */
-    VectorXd set_weights();
+    void set_weights();
 };
 
 

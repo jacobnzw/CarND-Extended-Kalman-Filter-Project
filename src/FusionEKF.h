@@ -30,19 +30,19 @@ class FusionEKF
       */
     virtual ~FusionEKF();
 
-    virtual VectorXd processFunction(VectorXd &x, float dt);
+    static VectorXd processFunction(const VectorXd &x, float dt);
 
-    virtual VectorXd radarFunction(VectorXd &x, float dt);
+    static VectorXd radarFunction(const VectorXd &x, float dt);
 
-    virtual VectorXd laserFunction(VectorXd &x, float dt);
+    static VectorXd laserFunction(const VectorXd &x, float dt);
 
-    virtual MatrixXd processFunctionGrad(VectorXd &x, float dt);
+    static MatrixXd processFunctionGrad(const VectorXd &x, float dt);
 
-    virtual MatrixXd radarFunctionGrad(VectorXd &x, float dt);
+    static MatrixXd radarFunctionGrad(const VectorXd &x, float dt);
 
-    virtual MatrixXd laserFunctionGrad(VectorXd &x, float dt);
+    static MatrixXd laserFunctionGrad(const VectorXd &x, float dt);
 
-    virtual MatrixXd processCovariance(float dt);
+    static MatrixXd processCovariance(float dt);
 
     virtual void measurementUpdate(const VectorXd &z);
 
