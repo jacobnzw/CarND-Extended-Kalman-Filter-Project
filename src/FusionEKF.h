@@ -63,7 +63,6 @@ class FusionEKF
 
     MatrixXd R_laser_;
     MatrixXd R_radar_;
-    MatrixXd H_laser_;
 };
 
 #endif /* FusionEKF_H_ */

@@ -71,8 +71,8 @@ VectorXd FusionEKF::laserFunction(VectorXd &x, float dt)
 MatrixXd FusionEKF::processFunctionGrad(VectorXd &x, float dt)
 {
   MatrixXd F = MatrixXd::Ones(4, 4);
-  F[0, 2] = dt;
-  F[1, 3] = dt;
+  F(0, 2) = dt;
+  F(1, 3) = dt;
   F.transposeInPlace();
   return F;
 }
@@ -155,7 +155,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     previous_timestamp_ = measurement_pack.timestamp_;
 
     Moments pred_moments;
-    pred_moments = mt_dyn_.apply(&processFunction, &processFunctionGrad, mx_, Px_, dt);
+    pred_moments = mt_dyn_.apply(processFunction, processFunctionGrad, mx_, Px_, dt);
     mx_ = pred_moments.mean;
     Px_ = pred_moments.cov + processCovariance(dt);
 

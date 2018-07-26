@@ -112,10 +112,10 @@ int main()
 
     	  // read filtered state off of the Kalman filter object in the FusionEKF class instance
     	  VectorXd estimate(4);
-    	  double p_x = fusionEKF.ekf_.x_(0);
-    	  double p_y = fusionEKF.ekf_.x_(1);
-    	  double v1  = fusionEKF.ekf_.x_(2);
-    	  double v2 = fusionEKF.ekf_.x_(3);
+    	  double p_x = fusionEKF.mx_(0);
+    	  double p_y = fusionEKF.mx_(1);
+    	  double v1  = fusionEKF.mx_(2);
+    	  double v2 = fusionEKF.mx_(3);
     	  estimate(0) = p_x;
     	  estimate(1) = p_y;
     	  estimate(2) = v1;

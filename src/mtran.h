@@ -22,9 +22,11 @@ public:
     int dim_in_;
     int dim_out_;
 
-    // arguments: input mean and covariance, function handle, function parameters
-    virtual Moments apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
-                          const VectorXd &in_mean, const MatrixXd &in_cov, float dt) = 0;
+    MomentTransform(int dim_in, int dim_out);
+
+    virtual Moments apply(std::function<VectorXd(VectorXd, float)> f, 
+                          std::function<MatrixXd(VectorXd, float)> f_grad,
+                          const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 };
 
 
@@ -36,7 +38,8 @@ class LinearizationTransform : public MomentTransform {
 public:
     LinearizationTransform(int dim_in, int dim_out);
     virtual ~LinearizationTransform();
-    Moments apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+    Moments apply(std::function<VectorXd(VectorXd, float)> f, 
+                  std::function<MatrixXd(VectorXd, float)> f_grad,
                   const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 };
 
@@ -61,9 +64,11 @@ public:
 
     int num_points_;
 
+    SigmaPointMomentTransform(int dim_in, int dim_out);
+    
 private:
-    virtual MatrixXd set_sigma_points() = 0;
-    virtual VectorXd set_weights() = 0;
+    virtual MatrixXd set_sigma_points();
+    virtual VectorXd set_weights();
 };
 
 
@@ -75,7 +80,8 @@ public:
 
     UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F);
     virtual ~UnscentedTransform();
-    Moments apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
+    Moments apply(std::function<VectorXd(VectorXd, float)> f, 
+                  std::function<MatrixXd(VectorXd, float)> f_grad,
                   const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
 
 private:
