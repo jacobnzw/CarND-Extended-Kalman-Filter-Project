@@ -3,14 +3,17 @@
 //
 
 #include "mtran.h"
+#include <iostream>
+using namespace std;
 
 MomentTransform::MomentTransform() {}
 MomentTransform::MomentTransform(int dim_in, int dim_out) {}
 MomentTransform::~MomentTransform() {}
 Moments MomentTransform::apply(std::function<VectorXd(const VectorXd &, float)> f,
                                std::function<MatrixXd(const VectorXd &, float)> f_grad, const VectorXd &in_mean,
-                               const MatrixXd &in_cov, float dt) {
+                               const MatrixXd &in_cov, double dt) {
     Moments out;
+    cout << "Inside MomentTransform::apply()" << endl;
     return out;
 }
 
@@ -23,13 +26,17 @@ LinearizationTransform::~LinearizationTransform() {}
 
 Moments LinearizationTransform::apply(std::function<VectorXd(const VectorXd&, float)> f,
                                       std::function<MatrixXd(const VectorXd&, float)> f_grad,
-                                      const VectorXd &in_mean, const MatrixXd &in_cov, float dt) 
+                                      const VectorXd &in_mean, const MatrixXd &in_cov, double dt)
 {
+    cout << "Inside Linearization::apply" << endl;
     VectorXd fm = f(in_mean, dt);
+    cout << "mean computed" << endl;
     MatrixXd Fm = f_grad(in_mean, dt);
 
     Moments out;
+    cout << "computing mean linearized" << endl;
     out.mean = fm;
+    cout << "computing cov linearized" << endl;
     out.cov = Fm*in_cov*Fm.transpose();
     out.ccov = in_cov*Fm.transpose();
 
@@ -79,7 +86,7 @@ void UnscentedTransform::set_weights() {
 
 Moments UnscentedTransform::apply(std::function<VectorXd(const VectorXd&, float)> f,
                                   std::function<MatrixXd(const VectorXd&, float)> f_grad,
-                                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt)
+                                  const VectorXd &in_mean, const MatrixXd &in_cov, double dt)
 {
     // make sigma-points
     MatrixXd L = in_cov.llt().matrixL();

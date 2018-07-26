@@ -18,7 +18,9 @@ class FusionEKF
     VectorXd mx_, mz_;
     MatrixXd Px_, Pz_, Pxz_;
 
-    MomentTransform mt_dyn_, mt_radar_, mt_laser_;
+    MomentTransform mt_dyn_;
+    MomentTransform mt_radar_;
+    MomentTransform mt_laser_;
 
     /**
       * Constructor.
@@ -30,19 +32,19 @@ class FusionEKF
       */
     virtual ~FusionEKF();
 
-    static VectorXd processFunction(const VectorXd &x, float dt);
+    static VectorXd processFunction(const VectorXd &x, double dt);
 
-    static VectorXd radarFunction(const VectorXd &x, float dt);
+    static VectorXd radarFunction(const VectorXd &x, double dt);
 
-    static VectorXd laserFunction(const VectorXd &x, float dt);
+    static VectorXd laserFunction(const VectorXd &x, double dt);
 
-    static MatrixXd processFunctionGrad(const VectorXd &x, float dt);
+    static MatrixXd processFunctionGrad(const VectorXd &x, double dt);
 
-    static MatrixXd radarFunctionGrad(const VectorXd &x, float dt);
+    static MatrixXd radarFunctionGrad(const VectorXd &x, double dt);
 
-    static MatrixXd laserFunctionGrad(const VectorXd &x, float dt);
+    static MatrixXd laserFunctionGrad(const VectorXd &x, double dt);
 
-    static MatrixXd processCovariance(float dt);
+    static MatrixXd processCovariance(double dt);
 
     virtual void measurementUpdate(const VectorXd &z);
 

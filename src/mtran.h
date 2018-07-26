@@ -30,7 +30,7 @@ public:
 
     virtual Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
                           std::function<MatrixXd(const VectorXd&, float)> f_grad,
-                          const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
+                          const VectorXd &in_mean, const MatrixXd &in_cov, double dt);
 };
 
 
@@ -44,7 +44,7 @@ public:
     virtual ~LinearizationTransform();
     Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
                   std::function<MatrixXd(const VectorXd&, float)> f_grad,
-                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
+                  const VectorXd &in_mean, const MatrixXd &in_cov, double dt);
 };
 
 
@@ -87,7 +87,7 @@ public:
     virtual ~UnscentedTransform();
     Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
                   std::function<MatrixXd(const VectorXd&, float)> f_grad,
-                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt);
+                  const VectorXd &in_mean, const MatrixXd &in_cov, double dt);
 
 private:
     /**

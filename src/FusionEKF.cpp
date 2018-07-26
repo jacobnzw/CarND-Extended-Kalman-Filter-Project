@@ -48,7 +48,7 @@ FusionEKF::FusionEKF()
 */
 FusionEKF::~FusionEKF() {}
 
-VectorXd FusionEKF::processFunction(const VectorXd &x, float dt)
+VectorXd FusionEKF::processFunction(const VectorXd &x, double dt)
 {
   MatrixXd F;
   F << 1, 0, dt, 0,
@@ -58,7 +58,7 @@ VectorXd FusionEKF::processFunction(const VectorXd &x, float dt)
   return F * x;
 }
 
-VectorXd FusionEKF::radarFunction(const VectorXd &x, float dt)
+VectorXd FusionEKF::radarFunction(const VectorXd &x, double dt)
 {
   VectorXd out = VectorXd(3U);
   // compute predicted measurement and safeguard against division by zero
@@ -67,13 +67,13 @@ VectorXd FusionEKF::radarFunction(const VectorXd &x, float dt)
   return out;
 }
 
-VectorXd FusionEKF::laserFunction(const VectorXd &x, float dt)
+VectorXd FusionEKF::laserFunction(const VectorXd &x, double dt)
 {
   MatrixXd H = MatrixXd::Ones(2, 4);
   return H * x;
 }
 
-MatrixXd FusionEKF::processFunctionGrad(const VectorXd &x, float dt)
+MatrixXd FusionEKF::processFunctionGrad(const VectorXd &x, double dt)
 {
   MatrixXd F = MatrixXd::Ones(4, 4);
   F(0, 2) = dt;
@@ -82,7 +82,7 @@ MatrixXd FusionEKF::processFunctionGrad(const VectorXd &x, float dt)
   return F;
 }
 
-MatrixXd FusionEKF::radarFunctionGrad(const VectorXd &x, float dt)
+MatrixXd FusionEKF::radarFunctionGrad(const VectorXd &x, double dt)
 {
   MatrixXd jacobian = MatrixXd(3, 4);
   double p_x = x[0];
@@ -97,15 +97,15 @@ MatrixXd FusionEKF::radarFunctionGrad(const VectorXd &x, float dt)
   return jacobian;
 }
 
-MatrixXd FusionEKF::laserFunctionGrad(const VectorXd &x, float dt)
+MatrixXd FusionEKF::laserFunctionGrad(const VectorXd &x, double dt)
 {
   return MatrixXd::Ones(2, 4);
 }
 
-MatrixXd FusionEKF::processCovariance(float dt) {
+MatrixXd FusionEKF::processCovariance(double dt) {
     double noise_ax = 9;
     double noise_ay = 9;
-    MatrixXd Q;
+    MatrixXd Q = MatrixXd(4, 4);
     Q <<  noise_ax*pow(dt, 4)/4, 0, noise_ax*pow(dt, 3)/2, 0,
           0, noise_ay*pow(dt, 4)/4, 0, noise_ay*pow(dt, 3)/2,
           noise_ax*pow(dt, 3)/2, 0, noise_ax*pow(dt, 2), 0,
@@ -159,30 +159,37 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
     previous_timestamp_ = measurement_pack.timestamp_;
 
-    Moments pred_moments;
+    Moments pred_moments = {VectorXd(4), MatrixXd(4, 4), MatrixXd(4, 4)};
     pred_moments = mt_dyn_.apply(FusionEKF::processFunction, FusionEKF::processFunctionGrad, mx_, Px_, dt);
+    cout << "out mean " << endl << pred_moments.mean << endl;
+    cout << "out cov " << endl << pred_moments.cov << endl;
     mx_ = pred_moments.mean;
-    Px_ = pred_moments.cov + processCovariance(dt);
+    Px_ = pred_moments.cov + FusionEKF::processCovariance(dt);
+    cout << "out" << endl;
 
 
     /*****************************************************************************
      *  Update
      ****************************************************************************/
-//    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-//        // Radar updates
-//        Moments meas_moments;
-//        meas_moments = mt_radar_.apply(FusionEKF::radarFunction, FusionEKF::radarFunctionGrad, mx_, Px_, dt);
-//        mz_ = meas_moments.mean;
-//        Pz_ = meas_moments.cov + R_radar_;
-//        Pxz_ = meas_moments.ccov;
-//        measurementUpdate(measurement_pack.raw_measurements_);
-//    } else {
-//        // Laser updates
-//        Moments meas_moments;
-//        meas_moments = mt_laser_.apply(FusionEKF::laserFunction, FusionEKF::laserFunctionGrad, mx_, Px_, dt);
-//        mz_ = meas_moments.mean;
-//        Pz_ = meas_moments.cov + R_laser_;
-//        Pxz_ = meas_moments.ccov;
-//        measurementUpdate(measurement_pack.raw_measurements_);
-//    }
+    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+        // Radar updates
+        Moments meas_moments;
+        cout << "Radar: applying transform" << endl;
+        meas_moments = mt_radar_.apply(FusionEKF::radarFunction, FusionEKF::radarFunctionGrad, mx_, Px_, dt);
+        cout << "dick" << endl;
+        mz_ = meas_moments.mean;
+        Pz_ = meas_moments.cov + R_radar_;
+        Pxz_ = meas_moments.ccov;
+        cout << "boobs" << endl;
+        measurementUpdate(measurement_pack.raw_measurements_);
+        cout << "vagina" << endl;
+    } else {
+        // Laser updates
+        Moments meas_moments;
+        meas_moments = mt_laser_.apply(FusionEKF::laserFunction, FusionEKF::laserFunctionGrad, mx_, Px_, dt);
+        mz_ = meas_moments.mean;
+        Pz_ = meas_moments.cov + R_laser_;
+        Pxz_ = meas_moments.ccov;
+        measurementUpdate(measurement_pack.raw_measurements_);
+    }
 }
