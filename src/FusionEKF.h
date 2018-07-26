@@ -18,9 +18,9 @@ class FusionEKF
     VectorXd mx_, mz_;
     MatrixXd Px_, Pz_, Pxz_;
 
-    MomentTransform mt_dyn_;
-    MomentTransform mt_radar_;
-    MomentTransform mt_laser_;
+    LinearizationTransform mt_dyn_ = LinearizationTransform(4, 4);
+    LinearizationTransform mt_laser_ = LinearizationTransform(4, 2);
+    LinearizationTransform mt_radar_ = LinearizationTransform(4, 3);
 
     /**
       * Constructor.

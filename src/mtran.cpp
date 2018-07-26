@@ -34,9 +34,7 @@ Moments LinearizationTransform::apply(std::function<VectorXd(const VectorXd&, fl
     MatrixXd Fm = f_grad(in_mean, dt);
 
     Moments out;
-    cout << "computing mean linearized" << endl;
     out.mean = fm;
-    cout << "computing cov linearized" << endl;
     out.cov = Fm*in_cov*Fm.transpose();
     out.ccov = in_cov*Fm.transpose();
 

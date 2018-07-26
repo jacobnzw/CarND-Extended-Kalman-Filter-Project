@@ -16,9 +16,9 @@ using std::vector;
 FusionEKF::FusionEKF()
 {
   // initialize moment transforms
-  mt_dyn_ = LinearizationTransform(4, 4);
-  mt_laser_ = LinearizationTransform(4, 2);
-  mt_radar_ = LinearizationTransform(4, 3);
+//  mt_dyn_ = LinearizationTransform(4, 4);
+//  mt_laser_ = LinearizationTransform(4, 2);
+//  mt_radar_ = LinearizationTransform(4, 3);
 
   // predictive/filtered state moments
   mx_ = VectorXd(4);
@@ -50,7 +50,7 @@ FusionEKF::~FusionEKF() {}
 
 VectorXd FusionEKF::processFunction(const VectorXd &x, double dt)
 {
-  MatrixXd F;
+  MatrixXd F = MatrixXd(4, 4);
   F << 1, 0, dt, 0,
       0, 1, 0, dt,
       0, 0, 1, 0,
@@ -165,7 +165,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     cout << "out cov " << endl << pred_moments.cov << endl;
     mx_ = pred_moments.mean;
     Px_ = pred_moments.cov + FusionEKF::processCovariance(dt);
-    cout << "out" << endl;
 
 
     /*****************************************************************************
@@ -174,15 +173,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
         // Radar updates
         Moments meas_moments;
-        cout << "Radar: applying transform" << endl;
         meas_moments = mt_radar_.apply(FusionEKF::radarFunction, FusionEKF::radarFunctionGrad, mx_, Px_, dt);
-        cout << "dick" << endl;
         mz_ = meas_moments.mean;
         Pz_ = meas_moments.cov + R_radar_;
         Pxz_ = meas_moments.ccov;
-        cout << "boobs" << endl;
         measurementUpdate(measurement_pack.raw_measurements_);
-        cout << "vagina" << endl;
     } else {
         // Laser updates
         Moments meas_moments;
