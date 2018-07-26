@@ -4,15 +4,21 @@
 
 #include "mtran.h"
 
-LinearizationTransform::LinearizationTransform(int dim_in, int dim_out) {
-    dim_in_ = dim_in;
-    dim_out_ = dim_out;
-}
+
+MomentTransform::MomentTransform(int dim_in, int dim_out) {}
+
+
+/* 
+  Linearization moment transform based on first-order Taylor expansion used in EKF.
+*/
+LinearizationTransform::LinearizationTransform(int dim_in, int dim_out) : MomentTransform(dim_in, dim_out) {}
 
 LinearizationTransform::~LinearizationTransform() {}
 
-Moments LinearizationTransform::apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
-                                      const VectorXd &in_mean, const MatrixXd &in_cov, float dt) {
+Moments LinearizationTransform::apply(std::function<VectorXd(VectorXd, float)> f, 
+                                      std::function<MatrixXd(VectorXd, float)> f_grad,
+                                      const VectorXd &in_mean, const MatrixXd &in_cov, float dt) 
+{
     VectorXd fm = f(in_mean, dt);
     MatrixXd Fm = f_grad(in_mean, dt);
 
@@ -24,10 +30,11 @@ Moments LinearizationTransform::apply(VectorXd (*f)(VectorXd, float), MatrixXd (
     return out;
 }
 
+SigmaPointMomentTransform::SigmaPointMomentTransform(int dim_in, int dim_out) : MomentTransform(dim_in, dim_out) {}
 
-UnscentedTransform::UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F) {
-    dim_in_ = dim_in;
-    dim_out_ = dim_out;
+UnscentedTransform::UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F) : 
+SigmaPointMomentTransform(dim_in, dim_out)
+{
     num_points_ = 2*dim_in + 1;
 
     kappa_ = kappa;
@@ -61,8 +68,10 @@ VectorXd UnscentedTransform::set_weights() {
     weights_cov_[0] = weights_mean_[0] + (1 - pow(alpha_, 2) + beta_);
 }
 
-Moments UnscentedTransform::apply(VectorXd (*f)(VectorXd, float), MatrixXd (*f_grad)(VectorXd, float),
-                                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt) {
+Moments UnscentedTransform::apply(std::function<VectorXd(VectorXd, float)> f, 
+                                  std::function<MatrixXd(VectorXd, float)> f_grad,
+                                  const VectorXd &in_mean, const MatrixXd &in_cov, float dt) 
+{
     // make sigma-points
     MatrixXd L = in_cov.llt().matrixL();
     MatrixXd x = in_mean.rowwise().replicate(num_points_) + L*points_;

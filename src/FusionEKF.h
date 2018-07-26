@@ -9,47 +9,49 @@
 #include "mtran.h"
 #include "tools.h"
 
-using Eigen::VectorXd;
 using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
-class FusionEKF {
-public:
+class FusionEKF
+{
+  public:
     VectorXd mx_, mz_;
     MatrixXd Px_, Pz_, Pxz_;
 
     MomentTransform mt_dyn_, mt_radar_, mt_laser_;
 
     /**
-    * Constructor.
-    */
+      * Constructor.
+      */
     FusionEKF();
 
     /**
-    * Destructor.
-    */
+      * Destructor.
+      */
     virtual ~FusionEKF();
 
-    virtual VectorXd processFunction(VectorXd &x);
+    virtual VectorXd processFunction(VectorXd &x, float dt);
 
-    virtual VectorXd radarFunction(VectorXd &x);
+    virtual VectorXd radarFunction(VectorXd &x, float dt);
 
-    virtual VectorXd laserFunction(VectorXd &x);
+    virtual VectorXd laserFunction(VectorXd &x, float dt);
 
-    virtual MatrixXd processFunctionGrad(VectorXd &x);
+    virtual MatrixXd processFunctionGrad(VectorXd &x, float dt);
 
-    virtual MatrixXd radarFunctionGrad(VectorXd &x);
+    virtual MatrixXd radarFunctionGrad(VectorXd &x, float dt);
 
-    virtual MatrixXd laserFunctionGrad(VectorXd &x);
+    virtual MatrixXd laserFunctionGrad(VectorXd &x, float dt);
+
+    virtual MatrixXd processCovariance(float dt);
 
     virtual void measurementUpdate(const VectorXd &z);
 
     /**
-    * Run the whole flow of the Kalman Filter from here.
-    */
+      * Run the whole flow of the Kalman Filter from here.
+      */
     void ProcessMeasurement(const MeasurementPackage &measurement_pack);
 
-
-private:
+  private:
     // check whether the tracking toolbox was initialized or not (first measurement)
     bool is_initialized_;
 
@@ -61,7 +63,6 @@ private:
 
     MatrixXd R_laser_;
     MatrixXd R_radar_;
-    MatrixXd H_laser_;
 };
 
 #endif /* FusionEKF_H_ */
