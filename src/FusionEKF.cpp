@@ -20,6 +20,10 @@ FusionEKF::FusionEKF()
   mt_laser_ = LinearizationTransform(4, 2);
   mt_radar_ = LinearizationTransform(4, 3);
 
+  // predictive/filtered state moments
+  mx_ = VectorXd(4);
+  Px_ = MatrixXd(4, 4);
+
   is_initialized_ = false;
 
   previous_timestamp_ = 0;
