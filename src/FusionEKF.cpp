@@ -69,16 +69,16 @@ VectorXd FusionEKF::radarFunction(const VectorXd &x, double dt)
 
 VectorXd FusionEKF::laserFunction(const VectorXd &x, double dt)
 {
-  MatrixXd H = MatrixXd::Ones(2, 4);
+  MatrixXd H = MatrixXd::Identity(2, 4);
   return H * x;
 }
 
 MatrixXd FusionEKF::processFunctionGrad(const VectorXd &x, double dt)
 {
-  MatrixXd F = MatrixXd::Ones(4, 4);
+  MatrixXd F = MatrixXd::Identity(4, 4);
   F(0, 2) = dt;
   F(1, 3) = dt;
-  F.transposeInPlace();
+  // F.transposeInPlace();
   return F;
 }
 
@@ -99,7 +99,7 @@ MatrixXd FusionEKF::radarFunctionGrad(const VectorXd &x, double dt)
 
 MatrixXd FusionEKF::laserFunctionGrad(const VectorXd &x, double dt)
 {
-  return MatrixXd::Ones(2, 4);
+  return MatrixXd::Identity(2, 4);
 }
 
 MatrixXd FusionEKF::processCovariance(double dt) {
@@ -115,8 +115,16 @@ MatrixXd FusionEKF::processCovariance(double dt) {
 
 void FusionEKF::measurementUpdate(const VectorXd &z)
 {
+  VectorXd e = z - mz_;
+  // keep difference in angles between -pi and pi
+  double temp = e[1] / (2*M_PI);
+  if (abs(temp) > 1) 
+  {
+      unsigned int pi_count = floor(temp);
+      e[1] -= 2*pi_count*M_PI;
+  }
   MatrixXd K = Pz_.llt().solve(Pxz_.transpose());
-  mx_ = mx_ + K.transpose() * (z - mz_);
+  mx_ = mx_ + K.transpose() * e;
   Px_ = Px_ - K.transpose() * Pz_ * K;
 }
 
@@ -161,8 +169,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     Moments pred_moments = {VectorXd(4), MatrixXd(4, 4), MatrixXd(4, 4)};
     pred_moments = mt_dyn_.apply(FusionEKF::processFunction, FusionEKF::processFunctionGrad, mx_, Px_, dt);
-    cout << "out mean " << endl << pred_moments.mean << endl;
-    cout << "out cov " << endl << pred_moments.cov << endl;
     mx_ = pred_moments.mean;
     Px_ = pred_moments.cov + FusionEKF::processCovariance(dt);
 
@@ -172,7 +178,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      ****************************************************************************/
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
         // Radar updates
-        Moments meas_moments;
+        Moments meas_moments = {VectorXd(3), MatrixXd(3, 3), MatrixXd(4, 3)};
         meas_moments = mt_radar_.apply(FusionEKF::radarFunction, FusionEKF::radarFunctionGrad, mx_, Px_, dt);
         mz_ = meas_moments.mean;
         Pz_ = meas_moments.cov + R_radar_;
@@ -180,7 +186,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
         measurementUpdate(measurement_pack.raw_measurements_);
     } else {
         // Laser updates
-        Moments meas_moments;
+        Moments meas_moments = {VectorXd(2), MatrixXd(2, 2), MatrixXd(4, 2)};
         meas_moments = mt_laser_.apply(FusionEKF::laserFunction, FusionEKF::laserFunctionGrad, mx_, Px_, dt);
         mz_ = meas_moments.mean;
         Pz_ = meas_moments.cov + R_laser_;
