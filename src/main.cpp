@@ -31,7 +31,9 @@ int main()
   uWS::Hub h;
 
   // Create a Kalman Filter instance
+  cout << "building fusion EKF" << endl;
   FusionEKF fusionEKF;
+  cout << "fusion EKF built" << endl;
 
   // used to compute the RMSE later
   Tools tools;
@@ -109,6 +111,7 @@ int main()
 
           //Call ProcessMeasurment(meas_package) for Kalman filter
     	  fusionEKF.ProcessMeasurement(meas_package);
+        cout << "done processing measremnt" << endl;
 
     	  // read filtered state off of the Kalman filter object in the FusionEKF class instance
     	  VectorXd estimate(4);

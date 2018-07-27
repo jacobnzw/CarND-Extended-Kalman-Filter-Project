@@ -20,7 +20,8 @@ class FusionEKF
 
     LinearizationTransform mt_dyn_ = LinearizationTransform(4, 4);
     LinearizationTransform mt_laser_ = LinearizationTransform(4, 2);
-    LinearizationTransform mt_radar_ = LinearizationTransform(4, 3);
+    // LinearizationTransform mt_radar_ = LinearizationTransform(4, 3);
+    UnscentedTransform mt_radar_ = UnscentedTransform(4, 3, 0.0F, 1.0F, 2.0F);
 
     /**
       * Constructor.

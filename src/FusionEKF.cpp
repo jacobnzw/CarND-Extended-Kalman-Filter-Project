@@ -20,6 +20,8 @@ FusionEKF::FusionEKF()
 //  mt_laser_ = LinearizationTransform(4, 2);
 //  mt_radar_ = LinearizationTransform(4, 3);
 
+  cout  << "inside FusionEKF()" << endl;
+  
   // predictive/filtered state moments
   mx_ = VectorXd(4);
   Px_ = MatrixXd(4, 4);
@@ -27,6 +29,8 @@ FusionEKF::FusionEKF()
   is_initialized_ = false;
 
   previous_timestamp_ = 0;
+
+  cout  << "inside FusionEKF()" << endl;
 
   // initializing matrices
   R_laser_ = MatrixXd(2, 2);
@@ -78,7 +82,6 @@ MatrixXd FusionEKF::processFunctionGrad(const VectorXd &x, double dt)
   MatrixXd F = MatrixXd::Identity(4, 4);
   F(0, 2) = dt;
   F(1, 3) = dt;
-  // F.transposeInPlace();
   return F;
 }
 
@@ -150,7 +153,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
             /**
             Initialize state.
             */
-//            ekf_.x_.segment(0, 2) = measurement_pack.raw_measurements_.segment(0, 2);
             mx_[0] = measurement_pack.raw_measurements_[0];
             mx_[1] = measurement_pack.raw_measurements_[1];
         }
@@ -184,6 +186,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
         Pz_ = meas_moments.cov + R_radar_;
         Pxz_ = meas_moments.ccov;
         measurementUpdate(measurement_pack.raw_measurements_);
+        cout << "radar processed" << endl;
     } else {
         // Laser updates
         Moments meas_moments = {VectorXd(2), MatrixXd(2, 2), MatrixXd(4, 2)};
@@ -192,5 +195,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
         Pz_ = meas_moments.cov + R_laser_;
         Pxz_ = meas_moments.ccov;
         measurementUpdate(measurement_pack.raw_measurements_);
+        cout << "laser processed" << endl;
     }
 }

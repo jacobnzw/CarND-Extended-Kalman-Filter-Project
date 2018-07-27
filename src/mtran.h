@@ -20,12 +20,11 @@ struct Moments {
 
 class MomentTransform {
 public:
-    int dim_in_;
-    int dim_out_;
-
+    unsigned int dim_in_;
+    unsigned int dim_out_;
 
     MomentTransform();
-    MomentTransform(int dim_in, int dim_out);
+    MomentTransform(unsigned int dim_in, unsigned int dim_out);
     virtual ~MomentTransform();
 
     virtual Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
@@ -40,7 +39,7 @@ class LinearizationTransform : public MomentTransform {
      */
 
 public:
-    LinearizationTransform(int dim_in, int dim_out);
+    LinearizationTransform(unsigned int dim_in, unsigned int dim_out);
     virtual ~LinearizationTransform();
     Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
                   std::function<MatrixXd(const VectorXd&, float)> f_grad,
@@ -66,9 +65,9 @@ public:
     VectorXd weights_mean_;
     VectorXd weights_cov_;
 
-    int num_points_;
+    unsigned int num_points_;
 
-    SigmaPointMomentTransform(int dim_in, int dim_out);
+    SigmaPointMomentTransform(unsigned int dim_in, unsigned int dim_out);
     virtual ~SigmaPointMomentTransform();
     
 private:
@@ -83,7 +82,7 @@ public:
     float alpha_;
     float beta_;
 
-    UnscentedTransform(int dim_in, int dim_out, float kappa, float alpha=1.0F, float beta=2.0F);
+    UnscentedTransform(unsigned int dim_in, unsigned int dim_out, float kappa, float alpha=1.0F, float beta=2.0F);
     virtual ~UnscentedTransform();
     Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
                   std::function<MatrixXd(const VectorXd&, float)> f_grad,
