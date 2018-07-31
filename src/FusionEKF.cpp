@@ -15,13 +15,6 @@ using std::vector;
  */
 FusionEKF::FusionEKF()
 {
-  // initialize moment transforms
-//  mt_dyn_ = LinearizationTransform(4, 4);
-//  mt_laser_ = LinearizationTransform(4, 2);
-//  mt_radar_ = LinearizationTransform(4, 3);
-
-  cout  << "inside FusionEKF()" << endl;
-  
   // predictive/filtered state moments
   mx_ = VectorXd(4);
   Px_ = MatrixXd(4, 4);
@@ -29,8 +22,6 @@ FusionEKF::FusionEKF()
   is_initialized_ = false;
 
   previous_timestamp_ = 0;
-
-  cout  << "inside FusionEKF()" << endl;
 
   // initializing matrices
   R_laser_ = MatrixXd(2, 2);
@@ -142,12 +133,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
             Convert radar from polar to cartesian coordinates and initialize state.
 
             This seemingly ad-hocy conversion happens because we are initializing state with measurements.
-            Hence the need for inverse transform from polar (measurement space) to cartesian (state space).
             */
             double rho = measurement_pack.raw_measurements_[0];
             double theta = measurement_pack.raw_measurements_[1];
             mx_[0] = rho * cos(theta);
-            mx_[1] = rho * sin(theta);
+            // mx_[1] = rho * sin(theta);
         }
         else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
             /**
@@ -166,6 +156,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     /*****************************************************************************
      *  Prediction
      ****************************************************************************/
+    // cout << "Prediction ...";
     double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1e6;
     previous_timestamp_ = measurement_pack.timestamp_;
 
@@ -173,28 +164,32 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     pred_moments = mt_dyn_.apply(FusionEKF::processFunction, FusionEKF::processFunctionGrad, mx_, Px_, dt);
     mx_ = pred_moments.mean;
     Px_ = pred_moments.cov + FusionEKF::processCovariance(dt);
-
+    // cout << "Done." << endl;
 
     /*****************************************************************************
      *  Update
      ****************************************************************************/
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
         // Radar updates
-        Moments meas_moments = {VectorXd(3), MatrixXd(3, 3), MatrixXd(4, 3)};
+        // cout << "Updating radar ...";
+        Moments meas_moments; // = {VectorXd(3), MatrixXd(3, 3), MatrixXd(4, 3)};
         meas_moments = mt_radar_.apply(FusionEKF::radarFunction, FusionEKF::radarFunctionGrad, mx_, Px_, dt);
         mz_ = meas_moments.mean;
         Pz_ = meas_moments.cov + R_radar_;
         Pxz_ = meas_moments.ccov;
+        cout << "UT mz_: " << endl << mz_ << endl;
+        cout << "UT Pz_: " << endl << Pz_ << endl;
         measurementUpdate(measurement_pack.raw_measurements_);
-        cout << "radar processed" << endl;
+        // cout << "done." << endl;
     } else {
         // Laser updates
+        // cout << "Updating laser...";
         Moments meas_moments = {VectorXd(2), MatrixXd(2, 2), MatrixXd(4, 2)};
         meas_moments = mt_laser_.apply(FusionEKF::laserFunction, FusionEKF::laserFunctionGrad, mx_, Px_, dt);
         mz_ = meas_moments.mean;
         Pz_ = meas_moments.cov + R_laser_;
         Pxz_ = meas_moments.ccov;
         measurementUpdate(measurement_pack.raw_measurements_);
-        cout << "laser processed" << endl;
+        // cout << "done." << endl;
     }
 }
