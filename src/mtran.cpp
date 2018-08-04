@@ -80,6 +80,7 @@ void UnscentedTransform::set_weights() {
 
     weights_cov_ = VectorXd::Ones(num_points_) / (2*(dim_in_ + lambda));
     weights_cov_[0] = weights_mean_[0] + (1 - pow(alpha_, 2) + beta_);
+    // cout << "UT weights: " << endl << weights_mean_ << endl << endl << weights_cov_ << endl;
 }
 
 Moments UnscentedTransform::apply(std::function<VectorXd(const VectorXd&, float)> f,
@@ -96,7 +97,7 @@ Moments UnscentedTransform::apply(std::function<VectorXd(const VectorXd&, float)
     }
 
     // output moments
-    Moments out = {VectorXd(dim_out_), MatrixXd(dim_out_, dim_out_), MatrixXd(dim_in_, dim_out_)};
+    Moments out = {VectorXd(dim_out_), MatrixXd::Zero(dim_out_, dim_out_), MatrixXd::Zero(dim_in_, dim_out_)};
     // transformed mean
     out.mean = fcn_val_*weights_mean_;
     // cout << "fcn_val_.cols(): " << fcn_val_.cols() << endl;
@@ -111,6 +112,5 @@ Moments UnscentedTransform::apply(std::function<VectorXd(const VectorXd&, float)
         out.cov += weights_cov_(i) * (df.col(i) * df.col(i).transpose());
         out.ccov += weights_mean_(i) * (dx.col(i) * df.col(i).transpose());
     }
-
     return out;
 }
