@@ -29,7 +29,7 @@ public:
 
     virtual Moments apply(std::function<VectorXd(const VectorXd&, float)> f,
                           std::function<MatrixXd(const VectorXd&, float)> f_grad,
-                          const VectorXd &in_mean, const MatrixXd &in_cov, double dt);
+                          const VectorXd &in_mean, const MatrixXd &in_cov, double dt) = 0;
 };
 
 

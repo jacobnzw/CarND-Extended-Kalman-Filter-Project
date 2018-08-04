@@ -12,12 +12,12 @@ MomentTransform::MomentTransform(unsigned int dim_in, unsigned int dim_out) {
   dim_out_ = dim_out;
 }
 MomentTransform::~MomentTransform() {}
-Moments MomentTransform::apply(std::function<VectorXd(const VectorXd &, float)> f,
-                               std::function<MatrixXd(const VectorXd &, float)> f_grad, const VectorXd &in_mean,
-                               const MatrixXd &in_cov, double dt) {
-    Moments out;
-    return out;
-}
+// Moments MomentTransform::apply(std::function<VectorXd(const VectorXd &, float)> f,
+//                                std::function<MatrixXd(const VectorXd &, float)> f_grad, const VectorXd &in_mean,
+//                                const MatrixXd &in_cov, double dt) {
+//     Moments out;
+//     return out;
+// }
 
 /* 
   Linearization moment transform based on first-order Taylor expansion used in EKF.
